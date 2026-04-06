@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OWNER
+}
+
+enum BridgeItemType {
+  text
+  code
+  link
+  image
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  passwordHash String
+  role         UserRole      @default(OWNER)
+  bridgeItems  BridgeItem[]
+  dropFiles    DropFile[]
+  savedNotes   SavedNote[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model BridgeItem {
+  id           String         @id @default(cuid())
+  type         BridgeItemType
+  title        String
+  content      String
+  tags         String[]       @default([])
+  isPinned     Boolean        @default(false)
+  isFavorite   Boolean        @default(false)
+  sourceDevice String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note         SavedNote?
+
+  @@index([userId, createdAt])
+  @@index([userId, type])
+  @@index([userId, isPinned])
+  @@index([userId, title])
+}
+
+model DropFile {
+  id               String        @id @default(cuid())
+  originalName     String
+  storageKey       String
+  publicUrl        String
+  mimeType         String
+  sizeBytes        Int
+  uploadedByDevice String
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shareLinks       ShareLink[]
+
+  @@index([userId, createdAt])
+  @@index([userId, expiresAt])
+  @@index([userId, revokedAt])
+}
+
+model ShareLink {
+  id              String    @id @default(cuid())
+  token           String    @unique
+  dropFileId      String
+  dropFile        DropFile  @relation(fields: [dropFileId], references: [id], onDelete: Cascade)
+  expiresAt       DateTime
+  accessCount     Int       @default(0)
+  maxAccessCount  Int?
+  createdAt       DateTime  @default(now())
+  revokedAt       DateTime?
+
+  @@index([token])
+  @@index([dropFileId, expiresAt])
+}
+
+model SavedNote {
+  id             String      @id @default(cuid())
+  bridgeItemId   String      @unique
+  bridgeItem     BridgeItem  @relation(fields: [bridgeItemId], references: [id], onDelete: Cascade)
+  title          String
+  content        String
+  tags           String[]    @default([])
+  sourceDevice   String
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model StoredObject {
+  id           String   @id @default(cuid())
+  storageKey   String   @unique
+  bytes        Bytes
+  mimeType     String
+  originalName String
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([createdAt])
+}
