@@ -5,6 +5,8 @@ import { getRuntimeEnv } from "@/lib/env";
 import { getSettingsData } from "@/lib/dashboard-data";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const session = await getAuthSession();
   if (!session?.user?.id) {

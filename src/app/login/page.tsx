@@ -2,6 +2,8 @@ import { getAuthSession } from "@/auth";
 import { LoginForm } from "@/components/login-form";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ from?: string }> }) {
   const session = await getAuthSession();
   if (session?.user?.id) {

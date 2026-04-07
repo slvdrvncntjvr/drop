@@ -4,6 +4,8 @@ import { BridgeBoard } from "@/components/bridge-board";
 import { getBridgeBoardData } from "@/lib/dashboard-data";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function BridgePage() {
   const session = await getAuthSession();
   if (!session?.user?.id) {

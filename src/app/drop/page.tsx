@@ -4,6 +4,8 @@ import { DropBoard } from "@/components/drop-board";
 import { getDropBoardData } from "@/lib/dashboard-data";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function DropPage() {
   const session = await getAuthSession();
   if (!session?.user?.id) {

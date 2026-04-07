@@ -4,6 +4,8 @@ import { InboxBoard } from "@/components/inbox-board";
 import { getInboxBoardData } from "@/lib/dashboard-data";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export default async function InboxPage() {
   const session = await getAuthSession();
   if (!session?.user?.id) {
