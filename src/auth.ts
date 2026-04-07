@@ -48,7 +48,10 @@ export const authOptions: NextAuthOptions = {
         if (!parsed.success) return null;
 
         const env = getRuntimeEnv();
-        const normalizedEmail = parsed.data.email.toLowerCase();
+        const normalizedEmail = parsed.data.email.trim().toLowerCase();
+        const ownerEmail = env.OWNER_EMAIL.trim().toLowerCase();
+        const ownerPassword = env.OWNER_PASSWORD.trim();
+        const inputPassword = parsed.data.password;
         const ip = "unknown";
         const key = `${ip}:${normalizedEmail}`;
 
@@ -57,7 +60,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Owner-only guardrail: reject non-owner emails before any DB work.
-        if (normalizedEmail !== env.OWNER_EMAIL.toLowerCase()) {
+        if (normalizedEmail !== ownerEmail) {
           return null;
         }
 
@@ -66,14 +69,14 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          if (parsed.data.password !== env.OWNER_PASSWORD) {
+          if (inputPassword !== ownerPassword) {
             return null;
           }
 
-          const passwordHash = await bcrypt.hash(env.OWNER_PASSWORD, 12);
+          const passwordHash = await bcrypt.hash(ownerPassword, 12);
           const created = await prisma.user.create({
             data: {
-              email: normalizedEmail,
+              email: ownerEmail,
               passwordHash,
               role: "OWNER",
             },
@@ -92,11 +95,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const passwordMatches = await bcrypt.compare(parsed.data.password, user.passwordHash);
+        const passwordMatches = await bcrypt.compare(inputPassword, user.passwordHash);
 
         // Allow current OWNER_PASSWORD to recover from stale hashes in DB, then sync hash.
-        if (!passwordMatches && parsed.data.password === env.OWNER_PASSWORD) {
-          const passwordHash = await bcrypt.hash(env.OWNER_PASSWORD, 12);
+        if (!passwordMatches && inputPassword === ownerPassword) {
+          const passwordHash = await bcrypt.hash(ownerPassword, 12);
           await prisma.user.update({ where: { id: user.id }, data: { passwordHash, role: "OWNER" } });
 
           clearRateLimit(key);
