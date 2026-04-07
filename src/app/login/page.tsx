@@ -1,5 +1,6 @@
 import { getAuthSession } from "@/auth";
 import { LoginForm } from "@/components/login-form";
+import { getRuntimeEnv } from "@/lib/env";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   const params = await searchParams;
   const callbackUrl = params.from ?? "/bridge";
+  const env = getRuntimeEnv();
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl items-center justify-center px-4 py-10">
@@ -35,7 +37,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
         </section>
         <div className="self-center">
-          <LoginForm callbackUrl={callbackUrl} />
+          <LoginForm callbackUrl={callbackUrl} ownerEmail={env.OWNER_EMAIL} />
         </div>
       </div>
     </main>

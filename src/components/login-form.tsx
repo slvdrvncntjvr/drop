@@ -4,12 +4,11 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
-export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
+export function LoginForm({ callbackUrl, ownerEmail }: { callbackUrl: string; ownerEmail: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [accessCode, setAccessCode] = useState("");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -17,8 +16,8 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
     startTransition(async () => {
       const result = await signIn("credentials", {
-        email,
-        password,
+        email: ownerEmail,
+        password: accessCode,
         redirect: false,
         callbackUrl,
       });
@@ -45,16 +44,12 @@ export function LoginForm({ callbackUrl }: { callbackUrl: string }) {
 
       <div className="mt-8 grid gap-4">
         <label className="grid gap-2 text-sm text-slate-200/80">
-          Email
-          <input className="field" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
-        <label className="grid gap-2 text-sm text-slate-200/80">
-          Password
+          Access code
           <input
             className="field"
             type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            value={accessCode}
+            onChange={(event) => setAccessCode(event.target.value)}
             required
           />
         </label>

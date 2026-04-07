@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
         const normalizedEmail = parsed.data.email.trim().toLowerCase();
         const ownerEmail = env.OWNER_EMAIL.trim().toLowerCase();
         const ownerPassword = env.OWNER_PASSWORD.trim();
-        const inputPassword = parsed.data.password;
+        const inputPassword = parsed.data.password.trim();
         const ip = "unknown";
         const key = `${ip}:${normalizedEmail}`;
 
