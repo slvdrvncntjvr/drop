@@ -48,26 +48,65 @@ export const authOptions: NextAuthOptions = {
         if (!parsed.success) return null;
 
         const env = getRuntimeEnv();
+        const normalizedEmail = parsed.data.email.toLowerCase();
         const ip = "unknown";
-        const key = `${ip}:${parsed.data.email.toLowerCase()}`;
+        const key = `${ip}:${normalizedEmail}`;
 
         if (!checkRateLimit(key)) {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email.toLowerCase() },
-        });
-
-        if (!user || user.role !== "OWNER") {
+        // Owner-only guardrail: reject non-owner emails before any DB work.
+        if (normalizedEmail !== env.OWNER_EMAIL.toLowerCase()) {
           return null;
         }
 
-        if (user.email !== env.OWNER_EMAIL) {
+        const user = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+        });
+
+        if (!user) {
+          if (parsed.data.password !== env.OWNER_PASSWORD) {
+            return null;
+          }
+
+          const passwordHash = await bcrypt.hash(env.OWNER_PASSWORD, 12);
+          const created = await prisma.user.create({
+            data: {
+              email: normalizedEmail,
+              passwordHash,
+              role: "OWNER",
+            },
+          });
+
+          clearRateLimit(key);
+
+          return {
+            id: created.id,
+            email: created.email,
+            role: created.role,
+          };
+        }
+
+        if (user.role !== "OWNER") {
           return null;
         }
 
         const passwordMatches = await bcrypt.compare(parsed.data.password, user.passwordHash);
+
+        // Allow current OWNER_PASSWORD to recover from stale hashes in DB, then sync hash.
+        if (!passwordMatches && parsed.data.password === env.OWNER_PASSWORD) {
+          const passwordHash = await bcrypt.hash(env.OWNER_PASSWORD, 12);
+          await prisma.user.update({ where: { id: user.id }, data: { passwordHash, role: "OWNER" } });
+
+          clearRateLimit(key);
+
+          return {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+          };
+        }
 
         if (!passwordMatches) {
           return null;
