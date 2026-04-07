@@ -29,7 +29,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ storageKey
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return new NextResponse(asset.bytes, {
+  const body = Buffer.from(asset.bytes);
+
+  return new NextResponse(body, {
     headers: {
       "Content-Type": asset.mimeType || "application/octet-stream",
       "Content-Length": String(asset.sizeBytes),
